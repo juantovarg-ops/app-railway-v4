@@ -24,20 +24,19 @@ def _r():
 
 
 def get_embedding(text: str, task_type: str = "RETRIEVAL_QUERY") -> list[float]:
-    key = "emb:" + hashlib.md5((task_type + text).encode()).hexdigest()
-    cached = _r().get(key)
-    if cached:
-        return json.loads(cached)
-    response = _gc().models.embed_content(
-        model=EMBED_MODEL,
-        contents=text,
-        config=types.EmbedContentConfig(
-            task_type=task_type,
-            output_dimensionality=768,
-        ),
-    )
+    # Solo cachear queries, no documentos
+    if task_type == "RETRIEVAL_QUERY":
+        key = "emb:" + hashlib.md5((task_type + text).encode()).hexdigest()
+        cached = _r().get(key)
+        if cached:
+            return json.loads(cached)
+
+    response = _gc().models.embed_content(...)
     vec = response.embeddings[0].values
-    _r().set(key, json.dumps(vec), ex=86400)
+
+    if task_type == "RETRIEVAL_QUERY":
+        _r().set(key, json.dumps(vec), ex=86400)
+
     return vec
 
 
